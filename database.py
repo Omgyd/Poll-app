@@ -6,7 +6,7 @@ CREATE_POLLS = """CREATE TABLE IF NOT EXISTS polls
 CREATE_OPTIONS = """CREATE TABLE IF NOT EXISTS options
 (id SERIAL PRIMARY KEY, option_text TEXT, poll_id INTEGER, FOREIGN KEY(poll_id) REFERENCES polls (id));"""
 CREATE_VOTES = """CREATE TABLE IF NOT EXISTS votes
-(username TEXT, option_id INTEGER, FOREIGN KEY(option_id) REFERENCES options (id));"""
+(username TEXT, option_id INTEGER,vote_timestamp INTEGER, FOREIGN KEY(option_id) REFERENCES options (id));"""
 
 SELECT_POLL = "SELECT * FROM polls WHERE id = %s;"
 SELECT_ALL_POLLS = "SELECT * FROM polls;"
@@ -23,7 +23,7 @@ SELECT_VOTES_FOR_OPTION = "SELECT * FROM votes WHERE option_id = %s;"
 
 INSERT_POLL_RETURN_ID = "INSERT INTO polls (title, owner_username) VALUES (%s, %s) RETURNING id;"
 INSERT_OPTION_RETRUN_ID = "INSERT INTO options (option_text, poll_id) VALUES (%s, %s) RETURNING id;"
-INSERT_VOTE = "INSERT INTO votes (username, option_id) VALUES (%s, %s);"
+INSERT_VOTE = "INSERT INTO votes (username, option_id, vote_timestamp) VALUES (%s, %s, %s);"
 
 
 def create_tables(connection):
@@ -99,7 +99,7 @@ def get_votes_for_option(connection, option_id: int):
 
 
 
-def add_poll_vote(connection, username, option_id):
+def add_poll_vote(connection, username,vote_timestamp, option_id):
     with connection:
         with connection.cursor() as cursor:
-            cursor.execute(INSERT_VOTE, (username, option_id))
+            cursor.execute(INSERT_VOTE, (username, option_id, vote_timestamp))

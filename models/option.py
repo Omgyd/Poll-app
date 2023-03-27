@@ -1,5 +1,7 @@
 from typing import List
-from connection import create_connection
+from connection import get_connection
+import datetime
+import pytz
 import database
 
 
@@ -15,28 +17,26 @@ class Option:
     
 
     def save(self):
-        connection = create_connection()
-        new_option_id = database.add_options(connection, self.text, self.poll_id)
-        connection.close()
-        self.id = new_option_id
+        with get_connection() as connection:
+            new_option_id = database.add_options(connection, self.text, self.poll_id)
+            self.id = new_option_id
 
 
     @classmethod
     def get(cls, option_id: int) -> "Option":
-        connection = create_connection()
-        option = database.get_options(connection, option_id)
-        connection.close()
-        return cls(option[1], option[2], option[0])
+        with get_connection() as connection:
+            option = database.get_options(connection, option_id)
+            return cls(option[1], option[2], option[0])
 
     def vote(self, username: str):
-        connection = create_connection()
-        database.add_poll_vote(connection, username, self.poll_id)
-        connection.close()
+        with get_connection() as connection:
+            datetime_utc = datetime.datetime.now(tz=pytz.utc)
+            current_timestamp = datetime_utc.timestamp()
+            database.add_poll_vote(connection, username, current_timestamp, self.id)
 
 
     @property
     def votes(self):
-        connection = create_connection()
-        votes = database.get_votes_for_option(connection, self.id)
-        connection.close()
-        return votes
+        with get_connection() as connection:
+            votes = database.get_votes_for_option(connection, self.id)
+            return votes

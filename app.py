@@ -1,7 +1,9 @@
 from models.option import Option
 from models.polls import Poll
 from psycopg2.errors import DivisionByZero
-from connection import create_connection
+from connection import get_connection
+import datetime
+import pytz
 import random
 import database
 
@@ -62,6 +64,20 @@ def show_poll_votes():
     except ZeroDivisionError:
         print("No votes cast for that poll.")
 
+    poll_log = input("Would you like to view poll log: (y/N)")
+
+    if poll_log == "y":
+        _print_votes_for_options(options)
+
+
+def _print_votes_for_options(options):
+    for option in options:
+        print(f"-- {option.text} -- ")
+        for vote in option.votes:
+            naive_time = datetime.datetime.utcfromtimestamp(vote[2])
+            utc_timestamp = pytz.utc.localize(naive_time)
+            local_date = utc_timestamp.astimezone(pytz.timezone("US/Eastern")).strftime("%Y-%m-%d %H:%M")
+            print(f"\t {vote[0]} on {local_date}")
 
 def randomize_poll_winner():
     poll_id = int(input("Enter poll you'd like to pick a winner for: "))
@@ -83,8 +99,9 @@ MENU_OPTIONS = {
 
 
 def menu():
-    connection = create_connection()
-    database.create_tables(connection)
+    with get_connection() as connection:
+        database.create_tables(connection)
+
 
     while (selection := input(MENU_PROMPT)) != "6":
         try:
